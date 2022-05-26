@@ -1,0 +1,16 @@
+{
+    "name": "accuweather/testtask",
+    "description": "A test task",
+    "type": "project",
+    "license": "GPL",
+    "autoload": {
+        "psr-4": {
+            "Accuweather\\App\\": "src/"
+        }
+    },
+    "minimum-stability": "beta",
+    "require": {
+        "guzzlehttp/guzzle": "^7.4",
+        "google/apiclient": "^2.12"
+    }
+}
