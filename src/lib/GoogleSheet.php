@@ -26,6 +26,7 @@ class GoogleSheet
      * @var \Google_Service_Sheets
      */
     private $service;
+    private $columns = ['Name','Country','Region','Timezone','Rank','Latitude','Longitude','Weather Text','Is Day Time','Temperature Celsius (C)','Temperature Fahrenheit (F)'];
     
     /**
      * Constructor
@@ -81,11 +82,10 @@ class GoogleSheet
     public function batchUpdateValues($spreadsheetId, $range, $valueInputOption, $_values)
     {
         $service = $this->service;
-        // [START sheets_batch_update_values]
+        
+        array_unshift($_values,$this->columns);
+        
         $values = [
-            [
-                // Cell values ...
-            ],
             // Additional rows ...
         ];
         // [START_EXCLUDE silent]
@@ -102,8 +102,62 @@ class GoogleSheet
             'data' => $data
         ]);
         $result = $service->spreadsheets_values->batchUpdate($spreadsheetId, $body);
-        printf("%d cells updated.", $result->getTotalUpdatedCells());
-        // [END sheets_batch_update_values]
+
+
+
+        // get sheetId of sheet with index 0
+        $sheetId = $service->spreadsheets->get($spreadsheetId);
+        $sheetId = $sheetId->sheets[0]->properties->sheetId;
+
+        // set colour to a medium gray
+        $red = 66; $green = 134; $blue = 244;
+
+        // define range
+        $myRange = [
+            'sheetId' => $sheetId, // IMPORTANT: sheetId IS NOT the sheets index but its actual ID
+            'startRowIndex' => 0,
+            'endRowIndex' => 1,
+            'endColumnIndex' => 11,
+        ];
+
+        // define the formatting, change background colour and bold text
+        $format = [
+            'backgroundColor' => [
+                'red' => $red/255,
+                'green' => $green/255,
+                'blue' => $blue/255
+            ],
+            'textFormat' => [
+              'foregroundColor'=>[
+                'red' => 1.0,
+                'green' => 1.0,
+                'blue' => 1.0,
+              ],
+              'bold' => true
+            ]
+        ];
+
+        // build request
+        $requests = [
+            new \Google_Service_Sheets_Request([
+                'repeatCell' => [
+                    'fields' => 'userEnteredFormat.backgroundColor, userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.foregroundColor',
+                    'range' => $myRange,
+                    'cell' => [
+                        'userEnteredFormat' => $format,
+                    ],
+                ],
+            ])
+        ];
+
+        // add request to batchUpdate    
+        $batchUpdateRequest = new \Google_Service_Sheets_BatchUpdateSpreadsheetRequest([
+          'requests' => $requests
+        ]);
+
+        // run batchUpdate
+        $service->spreadsheets->batchUpdate($spreadsheetId, $batchUpdateRequest);
+
         return $result;
     }
     
